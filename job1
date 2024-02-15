@@ -1,1 +1,35 @@
-е
+#1.создаём пайп
+mkfifo newpipe
+Вывести через него в файл вывод команды ss -plnt
+ss-plnt > newpipe 
+cat newpipe
+#2.При помощи именованного пайпа заархивировать всё, что в него отправляем
+cat ~/1.txt > pipetest
+gzip -cv <pipetest> archive.gz
+#проверяем
+gzip -d archive.gz
+#3.Показать дату в юникстайме
+date +%s
+#3.1На вход команды date через пайп подать свой формат выводимой даты
+#с указанием переменной
+daat=+%s && date $daat
+#выводим формат в пайп
+echo +%s > datepipe
+cat < datepipe
+#финальный вариант
+mkfifo piped
+echo +%s > piped &
+read daata < piped
+date $daata
+rm piped -f
+#4.При помощи HEREDOC "сгенерировать" баш-скрипт для третьего пункта
+cat << 'EOF' > datepipe.sh
+
+mkfifo pipedd
+echo "+%s" > pipedd &
+read data < pipedd
+echo $data
+date $data
+EOF
+
+
