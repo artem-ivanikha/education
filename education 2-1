@@ -1,0 +1,210 @@
+#task 1
+Device       Start       End   Sectors  Size Type
+/dev/sda1     2048   1050623   1048576  512M EFI System
+/dev/sda2  1050624   3147775   2097152    1G Linux filesystem
+/dev/sda3  3147776 125829086 122681311 58.5G Linux LVM
+# create sdb1
+[root@education ~]# fdisk /dev/sdb
+
+Welcome to fdisk (util-linux 2.37.4).
+Changes will remain in memory only, until you decide to write them.
+Be careful before using the write command.
+
+Device does not contain a recognized partition table.
+Created a new DOS disklabel with disk identifier 0x3382146c.
+
+Command (m for help): m
+
+Help:
+
+  DOS (MBR)
+   a   toggle a bootable flag
+   b   edit nested BSD disklabel
+   c   toggle the dos compatibility flag
+
+  Generic
+   d   delete a partition
+   F   list free unpartitioned space
+   l   list known partition types
+   n   add a new partition
+   p   print the partition table
+   t   change a partition type
+   v   verify the partition table
+   i   print information about a partition
+
+  Misc
+   m   print this menu
+   u   change display/entry units
+   x   extra functionality (experts only)
+
+  Script
+   I   load disk layout from sfdisk script file
+   O   dump disk layout to sfdisk script file
+
+  Save & Exit
+   w   write table to disk and exit
+   q   quit without saving changes
+
+  Create a new label
+   g   create a new empty GPT partition table
+   G   create a new empty SGI (IRIX) partition table
+   o   create a new empty DOS partition table
+   s   create a new empty Sun partition table
+
+
+Command (m for help): f
+f: unknown command
+
+Command (m for help): F
+
+Unpartitioned space /dev/sdb: 10 GiB, 10736369664 bytes, 20969472 sectors
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+
+Start      End  Sectors Size
+ 2048 20971519 20969472  10G
+
+Command (m for help): n
+Partition type
+   p   primary (0 primary, 0 extended, 4 free)
+   e   extended (container for logical partitions)
+Select (default p): p
+Partition number (1-4, default 1): 1
+First sector (2048-20971519, default 2048): 2048
+Last sector, +/-sectors or +/-size{K,M,G,T,P} (2048-20971519, default 20971519): default
+Last sector, +/-sectors or +/-size{K,M,G,T,P} (2048-20971519, default 20971519): 20971519
+
+Created a new partition 1 of type 'Linux' and of size 10 GiB.
+
+[root@education ~]# swapoff /dev/dm-1
+[root@education ~]# swapon 
+.bash_history           .bashrc                 educ.log                .lesshst                .ssh   
+.bash_logout            .cshrc                  .history                PARTLABEL=              .tcshrc
+.bash_profile           /dev/mapper/ol_vg-swap  LABEL=                  PARTUUID=               UUID=  
+[root@education ~]# swapon /dev
+/dev                    /dev/mapper/ol_vg-swap  
+[root@education ~]# swapon /dev/sd
+/dev/sda   /dev/sda1  /dev/sda2  /dev/sda3  /dev/sdb   /dev/sdb1  /dev/sdc   
+[root@education ~]# swapon /dev/sd
+/dev/sda   /dev/sda1  /dev/sda2  /dev/sda3  /dev/sdb   /dev/sdb1  /dev/sdc   
+[root@education ~]# swapon /dev/sdb1
+swapon: /dev/sdb1: read swap header failed
+[root@education ~]# mkswap /dev/sdb
+/dev/sdb   /dev/sdb1
+[root@education ~]# mkswap /dev/sdb
+/dev/sdb   /dev/sdb1
+[root@education ~]# mkswap /dev/sdb1
+Setting up swapspace version 1, size = 10 GiB (10736365568 bytes)
+no label, UUID=90c0f35e-49c9-447b-a236-48f3c26da096
+[root@education ~]# swapon /dev/sdb1
+[root@education ~]# 
+/dev/sdb1: UUID="90c0f35e-49c9-447b-a236-48f3c26da096" TYPE="swap" PARTUUID="3382146c-01"
+
+
+#sdc
+
+[root@education ~]# fdisk /dev/sdc 
+
+Welcome to fdisk (util-linux 2.37.4).
+Changes will remain in memory only, until you decide to write them.
+Be careful before using the write command.
+
+Device does not contain a recognized partition table.       
+Created a new DOS disklabel with disk identifier 0xc45f2e5a.
+
+Command (m for help): n
+Partition type
+   p   primary (0 primary, 0 extended, 4 free)    
+   e   extended (container for logical partitions)
+Select (default p): p
+Partition number (1-4, default 1): 1
+First sector (2048-20971519, default 2048): default
+Value out of range.
+First sector (2048-20971519, default 2048): 2048
+Last sector, +/-sectors or +/-size{K,M,G,T,P} (2048-20971519, default 20971519): 20971519
+
+Created a new partition 1 of type 'Linux' and of size 10 GiB.
+
+Command (m for help): w
+The partition table has been altered.      
+Calling ioctl() to re-read partition table.
+Syncing disks.
+
+
+
+[root@education ~]# mkfs.xfs /dev/sdc
+mkfs.xfs: cannot open /dev/sdc: Device or resource busy
+[root@education ~]# umount /dev/sdc
+umount: /dev/sdc: not mounted.
+[root@education ~]# mkfs.xfs /dev/sdc1
+mkfs.xfs: cannot open /dev/sdc1: Device or resource busy
+[root@education ~]# reboot
+Connection to #################### closed by remote host.
+Connection to ############## closed.
+ivanikha@WS-XIA-2S700149:/mnt/c/Users/artem.ivanikha$ ssh root@##################
+Last login: Wed Feb 21 08:48:07 2024 from #####################
+[root@education ~]# lsblk
+NAME           MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+sda              8:0    0   60G  0 disk
+├─sda1           8:1    0  512M  0 part /boot/efi  
+├─sda2           8:2    0    1G  0 part /boot
+└─sda3           8:3    0 58.5G  0 part      
+  ├─ol_vg-root 252:0    0 57.5G  0 lvm  /     
+  └─ol_vg-swap 252:1    0    1G  0 lvm        
+sdb              8:16   0   10G  0 disk       
+└─sdb1           8:17   0   10G  0 part [SWAP]
+sdc              8:32   0   10G  0 disk       
+└─sdc1           8:33   0   10G  0 part       
+sr0             11:0    1 1024M  0 rom        
+[root@education ~]# mkfs.xfs /dev/sdc1
+meta-data=/dev/sdc1              isize=512    agcount=4, agsize=655296 blks   
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=1        finobt=1, sparse=1, rmapbt=0    
+         =                       reflink=1    bigtime=1 inobtcount=1 nrext64=0
+data     =                       bsize=4096   blocks=2621184, imaxpct=25
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0, ftype=1       
+log      =internal log           bsize=4096   blocks=16384, version=2   
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+[root@education ~]# mount /dev/sdc1 /root/ololo/
+[root@education ~]# lsblk
+NAME           MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+sda              8:0    0   60G  0 disk
+├─sda1           8:1    0  512M  0 part /boot/efi
+├─sda2           8:2    0    1G  0 part /boot
+└─sda3           8:3    0 58.5G  0 part
+  ├─ol_vg-root 252:0    0 57.5G  0 lvm  /
+  └─ol_vg-swap 252:1    0    1G  0 lvm
+sdb              8:16   0   10G  0 disk
+└─sdb1           8:17   0   10G  0 part [SWAP]
+sdc              8:32   0   10G  0 disk
+└─sdc1           8:33   0   10G  0 part /root/ololo
+sr0             11:0    1 1024M  0 rom
+mount -t tmpfs -o size=1250M tmpfs /root/tmpfs/
+Filesystem              Size  Used Avail Use% Mounted on
+devtmpfs                4.0M     0  4.0M   0% /dev
+tmpfs                   2.4G     0  2.4G   0% /dev/shm
+tmpfs                   982M   17M  965M   2% /run
+/dev/mapper/ol_vg-root   58G  2.2G   56G   4% /
+/dev/sda2               960M  185M  776M  20% /boot
+/dev/sda1               511M  6.2M  505M   2% /boot/efi
+tmpfs                   491M     0  491M   0% /run/user/0
+/dev/sdc1                10G  104M  9.9G   2% /root/ololo
+tmpfs                   1.3G     0  1.3G   0% /root/tmpfs
+/dev/mapper/ol_vg-swap: LABEL="SWAP" UUID="d5a91656-feb9-484f-b438-a9b602d5fbb8" TYPE="swap"
+/dev/sdb1: UUID="90c0f35e-49c9-447b-a236-48f3c26da096" TYPE="swap" PARTUUID="3382146c-01"
+/dev/mapper/ol_vg-root: LABEL="ROOT" UUID="da0017b6-cd2f-40f7-870a-782f1ab81722" TYPE="xfs"
+/dev/sdc1: UUID="a1310e60-199f-4da9-891a-9f90a9e2be70" TYPE="xfs" PARTUUID="c45f2e5a-01"
+/dev/sda2: LABEL="BOOTFS" UUID="a168242f-083e-48c7-a30f-b6db4483f1f6" TYPE="xfs" PARTUUID="d810168d-418e-4d31-8f2f-06bd2a495324"
+/dev/sda3: UUID="2y5djK-sPWS-5do2-u0Av-bh3c-RCFM-7B8CVv" TYPE="LVM2_member" PARTUUID="568caaa1-5c13-4d94-9abe-ad39d839e1e4"
+/dev/sda1: LABEL_FATBOOT="EFIFS" LABEL="EFIFS" UUID="D84A-4BEF" TYPE="vfat" PARTLABEL="EFI System Partition" PARTUUID="8652f9fe-a90c-4fce-b96c-86952e9b1955"
+/dev/sdc1: UUID="a1310e60-199f-4da9-891a-9f90a9e2be70" TYPE="xfs" PARTUUID="c45f2e5a-01"
+
+#mount fstab
+/dev/mapper/ol_vg-root  /                       xfs     defaults        0 0
+UUID=a168242f-083e-48c7-a30f-b6db4483f1f6 /boot                   xfs     defaults        0 0
+UUID=D84A-4BEF          /boot/efi               vfat    defaults,uid=0,gid=0,umask=077,shortname=winnt 0 2
+#/dev/mapper/ol_vg-swap  none                    swap    defaults        0 0
+UUID=90c0f35e-49c9-447b-a236-48f3c26da096 /dev/sdb1 swap defaults	0 0
+UUID=a1310e60-199f-4da9-891a-9f90a9e2be70 /root/ololo xfs defaults	0 0
