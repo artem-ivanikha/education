@@ -4,10 +4,10 @@
 5.15.0-202.135.2.el9uek.x86_64
 [root@education ~]# mv /boot/vmlinuz-5.15.0-202.135.2.el9uek.x86_64 /root/ololo/
 [root@education ~]# reboot
-Connection to 46.243.182.16 closed by remote host.
-Connection to 46.243.182.16 closed.
-ivanikha@WS-XIA-2S700149:/mnt/c/Users/artem.ivanikha$ ssh root@46.243.182.16
-Last login: Wed Feb 21 09:30:43 2024 from 188.227.11.232
+Connection to #6 closed by remote host.
+Connection to # closed.
+ivanikha@WS-XIA-2S700149:/mnt/c/Users/artem.ivanikha$ ssh root@#.16
+Last login: Wed Feb 21 09:30:43 2024 from #.11.232
 [root@education ~]# ls
 educ.log  ololo  tmpfs
 [root@education ~]# uname -r
@@ -22,10 +22,10 @@ The default is /boot/loader/entries/0bd950dff67041dcac705c492cbce5ed-5.15.0-202.
 [root@education ~]#
 
 [root@education ~]# reboot
-[root@education ~]# Connection to 46.243.182.16 closed by remote host.
-Connection to 46.243.182.16 closed.
-ivanikha@WS-XIA-2S700149:/mnt/c/Users/artem.ivanikha$ ssh root@46.243.182.16
-Last login: Wed Feb 21 09:50:45 2024 from 188.227.11.232
+[root@education ~]# Connection to #.16 closed by remote host.
+Connection to #.16 closed.
+ivanikha@WS-XIA-2S700149:/mnt/c/Users/artem.ivanikha$ ssh root@#.16
+Last login: Wed Feb 21 09:50:45 2024 from #.11.232
 [root@education ~]# uname -r
 5.15.0-202.135.2.el9uek.x86_64
 [root@education ~]#
