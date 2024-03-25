@@ -1,0 +1,5 @@
+userName    creationDate deletionDate homeDir
+ivanikha    1332468005 1332468005 /home/ivanikha
+kashkarov   1330653605 1393725605 /home/kashkarov
+kachesova   1394071205 1711383667 /home/kachesova
+root 1711383820 - /root

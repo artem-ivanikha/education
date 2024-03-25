@@ -9,7 +9,7 @@ file=./task7.log
 touch "$file"
 while true; do
     use=$(df | awk '/'"$part"'/''{print $5}' | head -1 -c -2 );
-    ([[ $use -ge "90" ]] && echo "$(date +%e-%m-%y" "%H-%M-%S)" "myDiskChecker $part - less than 10%" || echo $use ) >> $file
-    ([[ $use -ge "50" ]] && echo "$(date +%e-%m-%y" "%H-%M-%S)" "myDiskChecker $part - less than 50%" || echo $use ) >> $file
+    ([[ $use -ge "90" ]] && echo "$(date +%e-%m-%y" "%H-%M-%S)" "myDiskChecker $part - less than 10%" || echo "part $part usage $use""%" ) >> $file
+    ([[ $use -ge "50" ]] && echo "$(date +%e-%m-%y" "%H-%M-%S)" "myDiskChecker $part - less than 50%" || echo "part $part usage $use""%" ) >> $file
     sleep 1
 done

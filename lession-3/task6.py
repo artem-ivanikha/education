@@ -7,7 +7,7 @@
 #echo процесс
 #read $proc
 file=./task6.log
-#touch "$file"
+touch "$file"
 proc=ssh-agent
 while true; do
     #echo введеный идентификатор "$proc"
