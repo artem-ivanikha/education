@@ -171,11 +171,156 @@ lvconvert --repair vg-raid1/myraid /dev/sdc
 
 
 Собрать из нескольких дисков LVM ( какой угодно, но не RAID 1 )
+vgcreate vg-raid5 /dev/sdd /dev/sde /dev/sdf
+lvcreate --type raid6 -i 3 -L 13G -n lv-raid vg-raid5 --alloc anywhere
+parted /dev/vg-raid5/
 Три раздела:
-root
-opt
-tmp
+    root
+    opt
+    tmp
+    (parted) mkpart root                                                      
+    Error: /dev/dm-17: unrecognised disk label
+    (parted) mklabel gpt
+    (parted) mkpart root                                                      
+    File system type?  [ext2]? ext2                                           
+    Start?                                                                    
+    Start? 1                                                                  
+    End? 3000                                                                
+    (parted) print                                                            
+    Model: Linux device-mapper (raid) (dm)
+    Disk /dev/dm-17: 14.0GB
+    Sector size (logical/physical): 512B/512B
+    Partition Table: gpt
+    Disk Flags: 
+
+    Number  Start  End     Size    File system  Name  Flags
+    1      983kB  3000MB  2999MB  ext2         root
+
+    (parted) mkpart opt
+    File system type?  [ext2]?                                                
+    Start? 1                                                                  
+    End? 4000
+    Warning: You requested a partition from 1000kB to 4000MB (sectors 1953..7812500).
+    The closest location we can manage is 983kB to 983kB (sectors 1919..1919).
+    Is this still acceptable to you?
+    Yes/No? no                                                                
+    (parted) print
+    Model: Linux device-mapper (raid) (dm)
+    Disk /dev/dm-17: 14.0GB
+    Sector size (logical/physical): 512B/512B
+    Partition Table: gpt
+    Disk Flags: 
+
+    Number  Start  End     Size    File system  Name  Flags
+    1      983kB  3000MB  2999MB               root
+
+    (parted) mkpart opt
+    File system type?  [ext2]?                                                
+    Start? 3001                                                               
+    End? 7000                                                                 
+    (parted) print
+    Model: Linux device-mapper (raid) (dm)
+    Disk /dev/dm-17: 14.0GB
+    Sector size (logical/physical): 512B/512B
+    Partition Table: gpt
+    Disk Flags: 
+
+    Number  Start   End     Size    File system  Name  Flags
+    1      983kB   3000MB  2999MB               root
+    2      3001MB  7000MB  3999MB  ext2         opt
+
+    (parted) mkpart tmp
+    File system type?  [ext2]?                                                
+    Start? 7001                                                               
+    End? 12000                                                                
+    (parted)      
 Примонтировать согласно меткам разделов
+
+    ├─vg--raid5-lv--raid1     252:18   0  2.8G  0 part /root
+    ├─vg--raid5-lv--raid2     252:19   0  3.7G  0 part /opt
+    └─vg--raid5-lv--raid3     252:20   0  4.7G  0 part /tmp
+    mkfs -t ext4 /dev/mapper/vg--raid5-lv--raid1
+    [root@oraclelinux ~]# lsblk
+    NAME                          MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+    sda                             8:0    0   10G  0 disk 
+    ├─sda1                          8:1    0  512M  0 part /boot/efi
+    ├─sda2                          8:2    0    1G  0 part /boot
+    └─sda3                          8:3    0  8.5G  0 part 
+    ├─ol_vg-root                252:0    0  7.5G  0 lvm  /
+    └─ol_vg-swap                252:1    0    1G  0 lvm  [SWAP]
+    sdb                             8:16   0   20G  0 disk 
+    ├─vg--raid1-myraid_rmeta_0    252:2    0    4M  0 lvm  
+    │ └─vg--raid1-myraid          252:6    0   15G  0 lvm  /root/raid1-dir
+    └─vg--raid1-myraid_rimage_0   252:3    0   15G  0 lvm  
+    └─vg--raid1-myraid          252:6    0   15G  0 lvm  /root/raid1-dir
+    sdc                             8:32   0   20G  0 disk 
+    ├─vg--raid1-myraid_rmeta_1    252:7    0    4M  0 lvm  
+    │ └─vg--raid1-myraid          252:6    0   15G  0 lvm  /root/raid1-dir
+    └─vg--raid1-myraid_rimage_1   252:8    0   15G  0 lvm  
+    └─vg--raid1-myraid          252:6    0   15G  0 lvm  /root/raid1-dir
+    sdd                             8:48   0   15G  0 disk 
+    ├─vg--raid5-lv--raid_rmeta_0  252:4    0    4M  0 lvm  
+    │ └─vg--raid5-lv--raid        252:17   0   13G  0 lvm  
+    │   ├─vg--raid5-lv--raid1     252:18   0  2.8G  0 part 
+    │   ├─vg--raid5-lv--raid2     252:19   0  3.7G  0 part 
+    │   └─vg--raid5-lv--raid3     252:20   0  4.7G  0 part 
+    ├─vg--raid5-lv--raid_rimage_0 252:5    0  4.3G  0 lvm  
+    │ └─vg--raid5-lv--raid        252:17   0   13G  0 lvm  
+    │   ├─vg--raid5-lv--raid1     252:18   0  2.8G  0 part 
+    │   ├─vg--raid5-lv--raid2     252:19   0  3.7G  0 part 
+    │   └─vg--raid5-lv--raid3     252:20   0  4.7G  0 part 
+    ├─vg--raid5-lv--raid_rmeta_3  252:13   0    4M  0 lvm  
+    │ └─vg--raid5-lv--raid        252:17   0   13G  0 lvm  
+    │   ├─vg--raid5-lv--raid1     252:18   0  2.8G  0 part 
+    │   ├─vg--raid5-lv--raid2     252:19   0  3.7G  0 part 
+    │   └─vg--raid5-lv--raid3     252:20   0  4.7G  0 part 
+    └─vg--raid5-lv--raid_rimage_3 252:14   0  4.3G  0 lvm  
+    └─vg--raid5-lv--raid        252:17   0   13G  0 lvm  
+        ├─vg--raid5-lv--raid1     252:18   0  2.8G  0 part 
+        ├─vg--raid5-lv--raid2     252:19   0  3.7G  0 part 
+        └─vg--raid5-lv--raid3     252:20   0  4.7G  0 part 
+    sde                             8:64   0   15G  0 disk 
+    ├─vg--raid5-lv--raid_rmeta_1  252:9    0    4M  0 lvm  
+    │ └─vg--raid5-lv--raid        252:17   0   13G  0 lvm  
+    │   ├─vg--raid5-lv--raid1     252:18   0  2.8G  0 part 
+    │   ├─vg--raid5-lv--raid2     252:19   0  3.7G  0 part 
+    │   └─vg--raid5-lv--raid3     252:20   0  4.7G  0 part 
+    ├─vg--raid5-lv--raid_rimage_1 252:10   0  4.3G  0 lvm  
+    │ └─vg--raid5-lv--raid        252:17   0   13G  0 lvm  
+    │   ├─vg--raid5-lv--raid1     252:18   0  2.8G  0 part 
+    │   ├─vg--raid5-lv--raid2     252:19   0  3.7G  0 part 
+    │   └─vg--raid5-lv--raid3     252:20   0  4.7G  0 part 
+    ├─vg--raid5-lv--raid_rmeta_4  252:15   0    4M  0 lvm  
+    │ └─vg--raid5-lv--raid        252:17   0   13G  0 lvm  
+    │   ├─vg--raid5-lv--raid1     252:18   0  2.8G  0 part 
+    │   ├─vg--raid5-lv--raid2     252:19   0  3.7G  0 part 
+    │   └─vg--raid5-lv--raid3     252:20   0  4.7G  0 part 
+    └─vg--raid5-lv--raid_rimage_4 252:16   0  4.3G  0 lvm  
+    └─vg--raid5-lv--raid        252:17   0   13G  0 lvm  
+        ├─vg--raid5-lv--raid1     252:18   0  2.8G  0 part 
+        ├─vg--raid5-lv--raid2     252:19   0  3.7G  0 part 
+        └─vg--raid5-lv--raid3     252:20   0  4.7G  0 part 
+    sdf                             8:80   0   15G  0 disk 
+    ├─vg--raid5-lv--raid_rmeta_2  252:11   0    4M  0 lvm  
+    │ └─vg--raid5-lv--raid        252:17   0   13G  0 lvm  
+    │   ├─vg--raid5-lv--raid1     252:18   0  2.8G  0 part 
+    │   ├─vg--raid5-lv--raid2     252:19   0  3.7G  0 part 
+    │   └─vg--raid5-lv--raid3     252:20   0  4.7G  0 part 
+    └─vg--raid5-lv--raid_rimage_2 252:12   0  4.3G  0 lvm  
+    └─vg--raid5-lv--raid        252:17   0   13G  0 lvm  
+        ├─vg--raid5-lv--raid1     252:18   0  2.8G  0 part 
+        ├─vg--raid5-lv--raid2     252:19   0  3.7G  0 part 
+        └─vg--raid5-lv--raid3     252:20   0  4.7G  0 part 
+    [root@oraclelinux ~]# mount /dev/mapper/vg--raid5-lv--raid
+    vg--raid5-lv--raid           vg--raid5-lv--raid2          vg--raid5-lv--raid_rimage_0  vg--raid5-lv--raid_rimage_2  vg--raid5-lv--raid_rimage_4  vg--raid5-lv--raid_rmeta_1   vg--raid5-lv--raid_rmeta_3
+    vg--raid5-lv--raid1          vg--raid5-lv--raid3          vg--raid5-lv--raid_rimage_1  vg--raid5-lv--raid_rimage_3  vg--raid5-lv--raid_rmeta_0   vg--raid5-lv--raid_rmeta_2   vg--raid5-lv--raid_rmeta_4
+    [root@oraclelinux ~]# mount /dev/mapper/vg--raid5-lv--raid
+    vg--raid5-lv--raid           vg--raid5-lv--raid2          vg--raid5-lv--raid_rimage_0  vg--raid5-lv--raid_rimage_2  vg--raid5-lv--raid_rimage_4  vg--raid5-lv--raid_rmeta_1   vg--raid5-lv--raid_rmeta_3
+    vg--raid5-lv--raid1          vg--raid5-lv--raid3          vg--raid5-lv--raid_rimage_1  vg--raid5-lv--raid_rimage_3  vg--raid5-lv--raid_rmeta_0   vg--raid5-lv--raid_rmeta_2   vg--raid5-lv--raid_rmeta_4
+    [root@oraclelinux ~]# mount /dev/mapper/vg--raid5-lv--raid3 /root/tmp
+    [root@oraclelinux ~]# mount /dev/mapper/vg--raid5-lv--raid2 /root/opt
+    [root@oraclelinux ~]# mount /dev/mapper/vg--raid5-lv--raid1 /root/root
+
 Уменьшить объем пространства любого из разделов на 500 МБ
 Сгенерировать 500 файлов размером в 3 мегабайта в /root/. Имена файлов сгенерировать при помощи утилиты mktemp.
 Перетащить этот LVM на другую машину
