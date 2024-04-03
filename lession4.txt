@@ -1,0 +1,216 @@
+#Собрать из нескольких дисков LVM RAID 1
+#файловая система: ext4, доступное пространство - максимально возможное.
+vgcreate vg-raid1 /dev/sdb /dev/sdc
+    [root@oraclelinux ~]# vgdisplay
+  --- Volume group ---
+  VG Name               vg-raid1
+  System ID             
+  Format                lvm2
+  Metadata Areas        2
+  Metadata Sequence No  1
+  VG Access             read/write
+  VG Status             resizable
+  MAX LV                0
+  Cur LV                0
+  Open LV               0
+  Max PV                0
+  Cur PV                2
+  Act PV                2
+  VG Size               39.99 GiB
+  PE Size               4.00 MiB
+  Total PE              10238
+  Alloc PE / Size       0 / 0   
+  Free  PE / Size       10238 / 39.99 GiB
+  VG UUID               evMk00-ai8Y-LcKr-uRet-WPU6-NwlW-0udEX3
+   
+  --- Volume group ---
+  VG Name               ol_vg
+  System ID             
+  Format                lvm2
+  Metadata Areas        1
+  Metadata Sequence No  3
+  VG Access             read/write
+  VG Status             resizable
+  MAX LV                0
+  Cur LV                2
+  Open LV               2
+  Max PV                0
+  Cur PV                1
+  Act PV                1
+  VG Size               <8.50 GiB
+  PE Size               4.00 MiB
+  Total PE              2175
+  Alloc PE / Size       2175 / <8.50 GiB
+  Free  PE / Size       0 / 0   
+  VG UUID               dY03Ey-jveG-9GRK-6NxR-PN3n-98HH-VYq9oj
+lvcreate --type raid1 -m 1 -L 15G -n myraid vg-raid1
+    [root@oraclelinux ~]# lsblk
+    NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+    sda                           8:0    0   10G  0 disk 
+    ├─sda1                        8:1    0  512M  0 part /boot/efi
+    ├─sda2                        8:2    0    1G  0 part /boot
+    └─sda3                        8:3    0  8.5G  0 part 
+    ├─ol_vg-root              252:0    0  7.5G  0 lvm  /
+    └─ol_vg-swap              252:1    0    1G  0 lvm  [SWAP]
+    sdb                           8:16   0   20G  0 disk 
+    ├─vg--raid1-myraid_rmeta_0  252:2    0    4M  0 lvm  
+    │ └─vg--raid1-myraid        252:6    0   15G  0 lvm  
+    └─vg--raid1-myraid_rimage_0 252:3    0   15G  0 lvm  
+    └─vg--raid1-myraid        252:6    0   15G  0 lvm  
+    sdc                           8:32   0   20G  0 disk 
+    ├─vg--raid1-myraid_rmeta_1  252:4    0    4M  0 lvm  
+    │ └─vg--raid1-myraid        252:6    0   15G  0 lvm  
+    └─vg--raid1-myraid_rimage_1 252:5    0   15G  0 lvm  
+    └─vg--raid1-myraid        252:6    0   15G  0 lvm  
+mkfs.ext4 /dev/my_vg/mylv
+    mkfs.ext4 /dev/vg-raid1/myraid
+    mke2fs 1.46.5 (30-Dec-2021)
+    Creating filesystem with 3932160 4k blocks and 983040 inodes
+    Filesystem UUID: 3dc9ce6a-4d27-4cd2-8f8d-ce852d45106b
+    Superblock backups stored on blocks: 
+            32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632, 2654208
+
+    Allocating group tables: done                            
+    Writing inode tables: done                            
+    Creating journal (16384 blocks): done
+    Writing superblocks and filesystem accounting information: done 
+mkdir /root/raid1-dir
+mount /dev/vg-raid1/myraid /root/raid1-dir/
+dd if=/dev/zero of=$(mktemp /root/raid1-dir/XXXXXX) bs=1M count=1
+
+#Сгенерировать 2000 файлов размером в 1 мегабайт каждый на lv. Имена файлов сгенерировать при помощи утилиты mktemp.
+#pvcreate /dev/sdd /dev/sde
+
+for (( i=0; i<2000; i++))
+do
+    dd if=/dev/zero of=$(mktemp /root/raid1-dir/XXXXXX) bs=1M count=1
+done
+
+#Принудительно отключить один из дисков любым доступным способом от системы. Перезагрузить систему.
+
+
+
+#Вернуть в строй диск. Пофиксить проблемы файловой системы.
+[root@oraclelinux ~]# lvs --all --options name,copy_percent,devices vg-raid1
+  Devices file PVID EKoalScByK2Ok75GTn1btfDR7IRXCAeu last seen on /dev/sdc not found.
+  WARNING: Couldn't find device with uuid EKoalS-cByK-2Ok7-5GTn-1btf-DR7I-RXCAeu.
+  WARNING: VG vg-raid1 is missing PV EKoalS-cByK-2Ok7-5GTn-1btf-DR7I-RXCAeu (last written to /dev/sdc).
+  LV                Cpy%Sync Devices                              
+  myraid                     myraid_rimage_0(0),myraid_rimage_1(0)
+  [myraid_rimage_0]          /dev/sdb(1)                          
+  [myraid_rimage_1]          [unknown](1)                         
+  [myraid_rmeta_0]           /dev/sdb(0)                          
+  [myraid_rmeta_1]           [unknown](0) ;
+
+reboot
+vgextend vg-raid1 /dev/sdc
+
+vgchange -ay
+
+
+lvconvert --repair vg-raid1/
+lvconvert --repair vg-raid1/myraid /dev/sdc
+    [root@oraclelinux ~]# pvscan
+    Devices file PVID EKoalScByK2Ok75GTn1btfDR7IRXCAeu last seen on /dev/sdc not found.
+    PV /dev/sdb    VG vg-raid1        lvm2 [<20.00 GiB / 4.99 GiB free]
+    PV /dev/sdc    VG vg-raid1        lvm2 [<20.00 GiB / <20.00 GiB free]
+    PV /dev/sda3   VG ol_vg           lvm2 [<8.50 GiB / 0    free]
+    Total: 3 [<48.49 GiB] / in use: 3 [<48.49 GiB] / in no VG: 0 [0   ]
+    [root@oraclelinux ~]# lvconvert --repair vg-raid1/myraid /dev/sdc
+    vg-raid1/myraid must be active to perform this operation.
+    [root@oraclelinux ~]# vgchange -ay
+    1 logical volume(s) in volume group "vg-raid1" now active
+    2 logical volume(s) in volume group "ol_vg" now active
+    [root@oraclelinux ~]# lvconvert --repair vg-raid1/myraid /dev/sdc
+    Attempt to replace failed RAID images (requires full device resync)? [y/n]: y
+    Faulty devices in vg-raid1/myraid successfully replaced.
+
+[root@oraclelinux ~]# lvs --all --options name,copy_percent,devices vg-raid1
+  Devices file PVID EKoalScByK2Ok75GTn1btfDR7IRXCAeu last seen on /dev/sdc not found.
+  LV                Cpy%Sync Devices                              
+  myraid            100.00   myraid_rimage_0(0),myraid_rimage_1(0)
+  [myraid_rimage_0]          /dev/sdb(1)                          
+  [myraid_rimage_1]          /dev/sdc(1)                          
+  [myraid_rmeta_0]           /dev/sdb(0)                          
+  [myraid_rmeta_1]           /dev/sdc(0)                          
+    
+[root@oraclelinux ~]# ls -lha /root/raid1-dir/
+    total 0
+    drwxr-xr-x. 2 root root   6 Apr  3 14:48 .
+    dr-xr-x---. 5 root root 152 Apr  3 14:48 ..
+    [root@oraclelinux ~]# mount /dev/vg-raid1/myraid /root/raid1-dir/
+    [root@oraclelinux ~]# ls -lha /root/raid1-dir/
+    total 4.1M
+    drwxr-xr-x. 3 root root 4.0K Apr  3 14:50 .
+    dr-xr-x---. 5 root root  152 Apr  3 14:48 ..
+    -rw-------. 1 root root 1.0M Apr  3 14:50 Cx1JCx
+    -rw-------. 1 root root 1.0M Apr  3 14:50 hmocnz
+    -rw-------. 1 root root 1.0M Apr  3 14:50 LletYH
+    drwx------. 2 root root  16K Apr  3 14:47 lost+found
+    -rw-------. 1 root root 1.0M Apr  3 14:50 vnkSFH
+    [root@oraclelinux ~]# 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Собрать из нескольких дисков LVM ( какой угодно, но не RAID 1 )
+Три раздела:
+root
+opt
+tmp
+Примонтировать согласно меткам разделов
+Уменьшить объем пространства любого из разделов на 500 МБ
+Сгенерировать 500 файлов размером в 3 мегабайта в /root/. Имена файлов сгенерировать при помощи утилиты mktemp.
+Перетащить этот LVM на другую машину
+Используя parallel в количестве потоков, равным количеству ядер ( nproc, например ) запустить rsync и переместить из /root/ только сгенерированные файлы в /opt
+При помощи утилиты nc отправить-принять с одного на другой сервер любое сообщение по TCP и по UDP
+При помощи tcpdump посмотреть как устанавливается подключение, сообщение пересылается
+Поменять mac-address, параллельно посмотреть tcpdump-ом что происходит
+
+
+
+
+
+
+
+
+docker exec -it $(docker ps -aq -f name=postgres -f expose=5432) envdir "/run/etc/wal-e.d/env" wal-g backup-list
+
+
+
+mktemp /tmp/${tempfoo}.XXXXXX
+
+
+scp /root/ root@целевой хост:/root/"dump-"$(hostname -s)"-"$(date +%Y-%m-%d).sql.gz
+
+
+
+/dev/vg-raid1/myraid
+
+
+lvconvert --repair vg-raid1/myraid /dev/sdc
+
+lvconvert --repair my_vg/my_lv replace_pv
+
+vgreduce --removemissing vg-raid1
+
+lvconvert --repair vg-raid1/myraid
+
+lvs --all --options name,copy_percent,devices vg-raid1/myraid
