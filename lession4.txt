@@ -321,41 +321,55 @@ parted /dev/vg-raid5/
     [root@oraclelinux ~]# mount /dev/mapper/vg--raid5-lv--raid2 /root/opt
     [root@oraclelinux ~]# mount /dev/mapper/vg--raid5-lv--raid1 /root/root
 
-Уменьшить объем пространства любого из разделов на 500 МБ
-Сгенерировать 500 файлов размером в 3 мегабайта в /root/. Имена файлов сгенерировать при помощи утилиты mktemp.
+#Уменьшить объем пространства любого из разделов на 500 МБ
+lvresize -L 8G /dev/ol_vg/swap
+#Сгенерировать 500 файлов размером в 3 мегабайта в /root/. Имена файлов сгенерировать при помощи утилиты mktemp.
+for (( i=0; i<500; i++))
+do
+    dd if=/dev/zero of=$(mktemp /root/root/XXXXXX) bs=3M count=1
+done
 Перетащить этот LVM на другую машину
+    umount /dev/mapper/vg--raid5-lv--raid1
+    umount /dev/mapper/vg--raid5-lv--raid2
+    umount /dev/mapper/vg--raid5-lv--raid3
+    vgchange -an vg-raid5
+    reboot
+    vgexport vg-raid5
+    dd if=/dev/sdd bs=5M conv=fsync status=progress | gzip -c -9 | ssh root@78.140.242.33 'gzip -d | dd of=/dev/sdd bs=5M'
+    dd if=/dev/sde bs=5M conv=fsync status=progress | gzip -c -9 | ssh root@78.140.242.33 'gzip -d | dd of=/dev/sde bs=5M'
+    dd if=/dev/sdf bs=5M conv=fsync status=progress | gzip -c -9 | ssh root@78.140.242.33 'gzip -d | dd of=/dev/sdf bs=5M'
+#ВТОРОЙ ХОСТ
+    pvscan
+    vgimport vg-raid5
+    vgchange -ay vg-raid5
+    mount /dev/mapper/vg--raid5-lv--raid /root/roo2/
 Используя parallel в количестве потоков, равным количеству ядер ( nproc, например ) запустить rsync и переместить из /root/ только сгенерированные файлы в /opt
+    i=$(nproc)
+    parallel -j $i -etc rsync --max-size=3.0M --min-size=3.0M /root/* /opt/
+    done
+
 При помощи утилиты nc отправить-принять с одного на другой сервер любое сообщение по TCP и по UDP
+    echo 123 | nc localhost 8080
+    nc -lp 8080
+
+    
 При помощи tcpdump посмотреть как устанавливается подключение, сообщение пересылается
+    root@WS-XIA-2S700149:/home/ivanikha/git# tcpdump -i any port 8080 -vvv
+    tcpdump: data link type LINUX_SLL2
+    tcpdump: listening on any, link-type LINUX_SLL2 (Linux cooked v2), snapshot length 262144 bytes
+    23:42:53.284620 lo    In  IP (tos 0x0, ttl 64, id 3141, offset 0, flags [DF], proto TCP (6), length 52)
+        localhost.44136 > localhost.http-alt: Flags [F.], cksum 0xfe28 (incorrect -> 0x6dbf), seq 1410595880, ack 3791874450, win 512, options [nop,nop,TS val 3441493377 ecr 3441426796], length 0
+    23:42:53.284681 lo    In  IP (tos 0x0, ttl 64, id 61213, offset 0, flags [DF], proto TCP (6), length 52)
+        localhost.http-alt > localhost.44136: Flags [F.], cksum 0xfe28 (incorrect -> 0x69a8), seq 1, ack 1, win 512, options [nop,nop,TS val 3441493377 ecr 3441493377], length 0
+    23:42:53.284696 lo    In  IP (tos 0x0, ttl 64, id 3142, offset 0, flags [DF], proto TCP (6), length 52)
+        localhost.44136 > localhost.http-alt: Flags [.], cksum 0xfe28 (incorrect -> 0x69a8), seq 1, ack 2, win 512, options [nop,nop,TS val 3441493377 ecr 3441493377], length 0
+    23:42:54.313827 lo    In  IP (tos 0x0, ttl 64, id 638, offset 0, flags [DF], proto TCP (6), length 60)
+        localhost.51422 > localhost.http-alt: Flags [S], cksum 0xfe30 (incorrect -> 0xaca8), seq 875343894, win 65495, options [mss 65495,sackOK,TS val 3441494406 ecr 0,nop,wscale 7], length 0
+    23:42:54.313831 lo    In  IP (tos 0x0, ttl 64, id 0, offset 0, flags [DF], proto TCP (6), length 40)
+        localhost.http-alt > localhost.51422: Flags [R.], cksum 0xe51b (correct), seq 0, ack 875343895, win 0, length 0
+
+
+
+
 Поменять mac-address, параллельно посмотреть tcpdump-ом что происходит
 
-
-
-
-
-
-
-
-docker exec -it $(docker ps -aq -f name=postgres -f expose=5432) envdir "/run/etc/wal-e.d/env" wal-g backup-list
-
-
-
-mktemp /tmp/${tempfoo}.XXXXXX
-
-
-scp /root/ root@целевой хост:/root/"dump-"$(hostname -s)"-"$(date +%Y-%m-%d).sql.gz
-
-
-
-/dev/vg-raid1/myraid
-
-
-lvconvert --repair vg-raid1/myraid /dev/sdc
-
-lvconvert --repair my_vg/my_lv replace_pv
-
-vgreduce --removemissing vg-raid1
-
-lvconvert --repair vg-raid1/myraid
-
-lvs --all --options name,copy_percent,devices vg-raid1/myraid
