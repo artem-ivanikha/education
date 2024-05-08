@@ -1,12 +1,17 @@
 #nc -e /root/nc.sh -lvk 46.243.182.16 60
 file=./1.log
 touch "$file"
+echo hello
+echo "options for command
+examples: 
+setSettings adapter_name speed duplexmode[half or full]
+getInetStats adapter_name"
 log() {
     port=60
     time=$(date +"%Y-%m-%d %H-%M-%S") 
     remote_ip=$(netstat -ant | grep ':$port' | awk '{print $5}' | cut -d: -f1 | grep -v '^0.0.0.0$') 
     local_ip=$(hostname -I)
-    echo "$time $local_ip $remote_ip $command Successfully" > $file
+    echo "$time $local_ip $remote_ip $command Successfully" >> $file
 }
 while true; do
       read command
