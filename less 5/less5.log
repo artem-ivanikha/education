@@ -13,8 +13,10 @@ Max kernel policy version:      33
 Enforcing
 mkdir /pubhtml
 <html><body><h2>test file
-<html><body><h2>test file
-curl http://46.243.182.16/index.html
 semanage fcontext -a -t httpd_sys_content_t /pubhtml/
+curl http://46.243.182.16/index.html
+systemctl disable firewalld.service 
+systemctl stop firewalld.service 
+semanage port -a -t http_port_t -p tcp 5665
 curl http://46.243.182.16:5665/index.html
 <html><body><h2>test file
