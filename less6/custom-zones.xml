@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<zone>
+  <short>Custom</short>
+  <description> education-linux </description>
+  <service name="ssh"/>
+  <service name="dhcpv6-client"/>
+  <service name="cockpit"/>
+  <service name="custom-service"/>
+  <!-- <forward/>
+   <rule family="ipv4" source address="188.227.87.10/24" port port="33" protocol="tcp">
+    <reject/>
+  </rule> -->
+</zone>
+

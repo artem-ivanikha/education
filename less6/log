@@ -1,0 +1,100 @@
+firewalld
+ssh root@188.227.87.10 -A
+ssh root@46.243.182.16
+<!-- Нарисовать правило сервиса с указанным портом ( см. ниже ) для публичной зоны в виде файла, который необходимо положить в то место, из которого firewalld читает правила. -->
+cd /etc/firewalld/zones/
+firewall-cmd --list-all-zones
+
+cd /etc/firewalld/zones/
+
+firewall-cmd --list-all-zones
+
+custom
+  target: default
+  icmp-block-inversion: no
+  interfaces: 
+  sources: 
+  services: cockpit dhcpv6-client ssh
+  ports: 
+  protocols: 
+  forward: yes
+  masquerade: no
+  forward-ports: 
+  source-ports: 
+  icmp-blocks: 
+  rich rules:
+
+firewall-cmd --set-default-zone custom 
+success
+
+firewall-cmd --list-services 
+cockpit custom-service dhcpv6-client ssh
+<!-- На машине 1 запустить nc на любом порту в режиме прослушивания. На этой машине должно быть правило из пункта выше -->
+
+
+[root@education firewalld]# nc -l 33
+hello
+<!-- На машине 2 запустить nc с подключением к машине 1 -->
+[root@oraclelinux ~]# nc 46.243.182.16 33
+hello
+<!-- Изменить правило сервиса так, что бы подключение с машины 2 к машине 1 отбрасывалось -->
+firewall-cmd --zone=custom --remove-service=custom-service 
+[root@oraclelinux ~]# nc 46.243.182.16 33
+Ncat: No route to host.
+
+[root@education firewalld]# firewall-cmd --list-services 
+cockpit dhcpv6-client ssh
+<!-- А это именно реджект -->
+[root@education firewalld]# firewall-cmd --list-rich-rules 
+rule family="ipv4" source address="188.227.87.10/24" port port="33" protocol="tcp" reject
+Ncat: Connection refused.
+
+<!-- iptables -->
+<!-- Написать правила для доступа к порту 22/tcp только для выделенного списка адресов, всем остальным адресам доступ запрещен -->
+[root@education firewalld]# iptables -L
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain FORWARD (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination    
+
+iptables -I INPUT -s 188.227.87.10/22 -p tcp --dport 22 -j ACCEPT
+[root@education firewalld]# iptables -I INPUT -s 94.25.229.189/22 -p tcp --dport 22 -j ACCEPT
+[root@education firewalld]# iptables -I INPUT -s ^C4 -p tcp --dport 22 -j ACCEPT
+[root@education firewalld]#          ^C
+[root@education firewalld]# sudo iptables -A INPUT -j DROP
+[root@education firewalld]# clear
+
+1    ACCEPT     tcp  --  94.25.228.0/22       anywhere             tcp dpt:ssh
+2    ACCEPT     tcp  --  188.227.84.0/22      anywhere             tcp dpt:ssh
+3    DROP       all  --  anywhere             anywhere       
+
+ssh root@78.140.242.28 -A
+root@debian:~# ssh root@46.243.182.16 -v
+OpenSSH_9.2p1 Debian-2, OpenSSL 3.0.9 30 May 2023
+debug1: Reading configuration data /etc/ssh/ssh_config
+debug1: /etc/ssh/ssh_config line 19: include /etc/ssh/ssh_config.d/*.conf matched no files
+debug1: /etc/ssh/ssh_config line 21: Applying options for *
+debug1: Connecting to 46.243.182.16 [46.243.182.16] port 22.
+
+
+[root@oraclelinux ~]# ssh root@46.243.182.16 -v
+OpenSSH_8.7p1, OpenSSL 3.0.7 1 Nov 2022
+debug1: Reading configuration data /etc/ssh/ssh_config
+debug1: Reading configuration data /etc/ssh/ssh_config.d/50-redhat.conf
+debug1: Reading configuration data /etc/crypto-policies/back-ends/openssh.config
+debug1: configuration requests final Match pass
+debug1: re-parsing configuration
+debug1: Reading configuration data /etc/ssh/ssh_config
+debug1: Reading configuration data /etc/ssh/ssh_config.d/50-redhat.conf
+debug1: Reading configuration data /etc/crypto-policies/back-ends/openssh.config
+debug1: Connecting to 46.243.182.16 [46.243.182.16] port 22.
+debug1: Connection established.
+debug1: identity file /root/.ssh/id_rsa type -1
+debug1: identity file /root/.ssh/id_rsa-cert type -1
+debug1: identity file /root/.ssh/id_dsa type -1
+debug1: identity file /root/.ssh/id_dsa-cert type -1
+debug1: identity file /root/.ssh/id_ecdsa ty
